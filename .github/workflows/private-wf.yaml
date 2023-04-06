@@ -15,6 +15,11 @@ on:
         description: 'Commit history depth to fetch'
         type: string
         default: '30'
+      runs_on:
+        description: 'Set runner, defualt ubuntu-latest'
+        type: string
+        default: 'ubuntu-latest'
+
   workflow_call:
     inputs:
       # If enabled, respects commits between semver tag build num iterations instead of previous commited tag (eg: X.X.X-y_2 -> X.X.X-y_3)
@@ -33,7 +38,7 @@ on:
 
 jobs:
   gh-release:
-    runs-on: pxfd-linux-c1-amd64
+    runs-on: ${{ inputs.runs_on || 'ubuntu-latest' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
