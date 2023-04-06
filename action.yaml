@@ -23,6 +23,7 @@ runs:
 
     - name: Get tags
       id: tag
+      shell: bash
       run: |
         git fetch --tags
         CURRENT_TAG=$(git describe --abbrev=0 --tags 2>/dev/null || true )
