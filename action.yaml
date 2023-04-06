@@ -1,6 +1,10 @@
 name: 'Github release'
 # description: 'Greet someone'
-# inputs:
+inputs:
+  fetch_depth:
+    description: 'Commit history depth to fetch'
+    type: string
+    default: '30'
 #   who-to-greet:  # id of input
 #     description: 'Who to greet'
 #     required: true
@@ -12,20 +16,17 @@ name: 'Github release'
 runs:
   using: "composite"
   steps:
-    - run: echo Hello ${{ inputs.who-to-greet }}.
-      shell: bash
-
     - name: Checkout
       uses: actions/checkout@v3
       with:
         fetch-depth: ${{ inputs.fetch_depth || '30' }}
 
-    # - name: Get tags
-    #   id: tag
-    #   run: |
-    #     git fetch --tags
-    #     CURRENT_TAG=$(git describe --abbrev=0 --tags 2>/dev/null || true )
-    #     PREVIOUS_TAG=$(git describe --abbrev=0 --tags $(git rev-list --tags --skip=1 --max-count=1) 2>/dev/null || true)
+    - name: Get tags
+      id: tag
+      run: |
+        git fetch --tags
+        CURRENT_TAG=$(git describe --abbrev=0 --tags 2>/dev/null || true )
+        PREVIOUS_TAG=$(git describe --abbrev=0 --tags $(git rev-list --tags --skip=1 --max-count=1) 2>/dev/null || true)
     #
     #     echo "previous tag: ${PREVIOUS_TAG}"
     #     echo "current tag: ${CURRENT_TAG}"
