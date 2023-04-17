@@ -1,5 +1,4 @@
 name: 'Github release'
-# description: 'Greet someone'
 inputs:
   # If enabled, respects commits between semver tag build num iterations instead of previous commited tag (eg: X.X.X-y_2 -> X.X.X-y_3)
   tag_num:
@@ -114,42 +113,5 @@ runs:
 
           #### Changelog:
           ${{ format('[`{0}..{1}`]({2}/{3}/compare/{0}..{1})', env.PREVIOUS_TAG, env.CURRENT_TAG, github.server_url, github.repository) }}
-          ${{ steps.changelog.outputs.changelog == 'true' && format('[{0}]({1}/{2}/blob/{3}/{0})', env.CHANGELOG_FILE, github.server_url, github.repository, github.ref_name) || '' }}# ----
+          ${{ steps.changelog.outputs.changelog == 'true' && format('[{0}]({1}/{2}/blob/{3}/{0})', env.CHANGELOG_FILE, github.server_url, github.repository, github.ref_name) || '' }}
 
-# on:
-#   push:
-#     tags:
-#       - '*'
-#   workflow_dispatch:
-#     inputs:
-#       # If enabled, respects commits between semver tag build num iterations instead of previous commited tag (eg: X.X.X-y_2 -> X.X.X-y_3)
-#       tag_num:
-#         description: 'Take into account build number'
-#         type: boolean
-#         default: false
-#       fetch_depth:
-#         description: 'Commit history depth to fetch'
-#         type: string
-#         default: '30'
-#   workflow_call:
-#     inputs:
-#       # If enabled, respects commits between semver tag build num iterations instead of previous commited tag (eg: X.X.X-y_2 -> X.X.X-y_3)
-#       tag_num:
-#         description: 'Take into account build number'
-#         type: boolean
-#         default: false
-#       fetch_depth:
-#         description: 'Commit history depth to fetch'
-#         type: string
-#         default: '30'
-#       changelog_file:
-#         description: 'Changelog file name'
-#         type: string
-#         default: 'CHANGELOG.md'
-#
-# jobs:
-#   gh-release:
-#     runs-on: pxfd-linux-c1-amd64
-#     steps:
-# -----
-#
