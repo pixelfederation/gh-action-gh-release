@@ -92,7 +92,7 @@ runs:
     # Export commits output through javascript to properly process multiline string
     - name: Commits output
       id: commits_output
-      uses: actions/github-script@v6.4.0
+      uses: actions/github-script@v6.4.1
       with:
         script: |
           core.setOutput("commits", `${{ steps.commits.outputs.commits }}`);
