@@ -1,0 +1,116 @@
+name: 'Github release'
+inputs:
+  # If enabled, respects commits between semver tag build num iterations instead of previous commited tag (eg: X.X.X-y_2 -> X.X.X-y_3)
+  tag_num:
+    description: 'Take into account build number'
+    type: boolean
+    default: false
+  fetch_depth:
+    description: 'Commit history depth to fetch'
+    type: string
+    default: '30'
+  changelog_file:
+    description: 'Changelog file name'
+    type: string
+    default: 'CHANGELOG.md'
+runs:
+  using: "composite"
+  steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: ${{ inputs.fetch_depth || '30' }}
+
+    - name: Get tags
+      id: tag
+      shell: bash
+      run: |
+        git fetch --tags
+        CURRENT_TAG=$(git describe --abbrev=0 --tags 2>/dev/null || true )
+        PREVIOUS_TAG=$(git describe --abbrev=0 --tags $(git rev-list --tags --skip=1 --max-count=1) 2>/dev/null || true)
+
+        echo "previous tag: ${PREVIOUS_TAG}"
+        echo "current tag: ${CURRENT_TAG}"
+        echo "previous_tag=${PREVIOUS_TAG}" >> $GITHUB_OUTPUT
+        echo "current_tag=${CURRENT_TAG}" >> $GITHUB_OUTPUT
+
+        # Exit if there's any tag
+        if [[ ! -n "${CURRENT_TAG}" ]]; then
+          # Create annotation
+          echo "::error::Can't get any tag, create one, then release can be published."
+          exit 1
+        fi
+
+    - name: Parse semver tag
+      if: ${{ inputs.tag_num || false }}
+      id: tag_semver
+      uses: pixelfederation/gh-action-semver-parser@v0.2.0
+      with:
+        tag: ${{ steps.tag.outputs.current_tag }}
+
+    - name: Parse semver tag iteration number
+      if: ${{ inputs.tag_num || false }}
+      id: tag_semver_num
+      env:
+        CURRENT_TAG: ${{ steps.tag.outputs.current_tag }}
+        CURRENT_TAG_UT: ${{ steps.tag_semver.outputs.ut }}
+      shell: bash
+      run: |
+        CURRENT_TAG_SEMVER_NUM=$(echo "${{ env.CURRENT_TAG }}" | sed -E 's/(.+)_([[:digit:]]+)/\2/' | grep -E '^[[:digit:]]+$')
+
+        if [[ "${CURRENT_TAG_SEMVER_NUM}" -ge 1 ]]; then
+          PREVIOUS_TAG_SEMVER_NUM=$((${CURRENT_TAG_SEMVER_NUM} - 1))
+          PREVIOUS_TAG=$(git tag -l "${{ env.CURRENT_TAG_UT }}_${PREVIOUS_TAG_SEMVER_NUM}")
+        fi
+        echo "previous_tag=${PREVIOUS_TAG}" >> $GITHUB_OUTPUT
+
+    - name: Changelog presence
+      id: changelog
+      env:
+        CHANGELOG_FILE: ${{ inputs.changelog_file || 'CHANGELOG.md' }}
+      shell: bash
+      run: |
+        if [[ -f ${{ env.CHANGELOG_FILE }} ]]; then
+          echo "changelog=true" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Release commits
+      id: commits
+      env:
+        PREVIOUS_TAG: ${{ (inputs.tag_num && steps.tag_semver_num.outputs.previous_tag != '') && steps.tag_semver_num.outputs.previous_tag || steps.tag.outputs.previous_tag }}
+        CURRENT_TAG: ${{ steps.tag.outputs.current_tag }}
+      shell: bash
+      run: |
+        if [[ "${{ env.PREVIOUS_TAG }}" ]]; then
+          COMMITS=$(git log --oneline --no-decorate ${{ env.PREVIOUS_TAG }}..${{ env.CURRENT_TAG }} | tr '"' "'" | while read LINE; do echo -n ${LINE}\\n; done)
+        else
+          COMMITS=$(git log --oneline --no-decorate ${{ env.CURRENT_TAG }} | tr '"' "'" | while read LINE; do echo -n ${LINE}\\n; done)
+        fi
+
+        echo "commits=${COMMITS}" >> $GITHUB_OUTPUT
+
+    # Export commits output through javascript to properly process multiline string
+    - name: Commits output
+      id: commits_output
+      uses: actions/github-script@v6.4.1
+      with:
+        script: |
+          core.setOutput("commits", `${{ steps.commits.outputs.commits }}`);
+
+    - name: Release
+      uses: softprops/action-gh-release@v1
+      env:
+        CHANGELOG_FILE: ${{ inputs.changelog_file || 'CHANGELOG.md' }}
+        PREVIOUS_TAG: ${{ (inputs.tag_num && steps.tag_semver_num.outputs.previous_tag != '') && steps.tag_semver_num.outputs.previous_tag || steps.tag.outputs.previous_tag }}
+        CURRENT_TAG: ${{ steps.tag.outputs.current_tag }}
+      with:
+        tag_name: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || steps.tag.outputs.current_tag }}
+        draft: false
+        prerelease: false
+        body: |
+          #### Commits in this release:
+          ${{ steps.commits_output.outputs.commits }}
+
+          #### Changelog:
+          ${{ format('[`{0}..{1}`]({2}/{3}/compare/{0}..{1})', env.PREVIOUS_TAG, env.CURRENT_TAG, github.server_url, github.repository) }}
+          ${{ steps.changelog.outputs.changelog == 'true' && format('[{0}]({1}/{2}/blob/{3}/{0})', env.CHANGELOG_FILE, github.server_url, github.repository, github.ref_name) || '' }}
