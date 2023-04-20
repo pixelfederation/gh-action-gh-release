@@ -109,12 +109,7 @@ jobs:
           PREVIOUS_TAG: ${{ (inputs.tag_num && steps.tag_semver_num.outputs.previous_tag != '') && steps.tag_semver_num.outputs.previous_tag || steps.tag.outputs.previous_tag }}
           CURRENT_TAG: ${{ steps.tag.outputs.current_tag }}
         run: |
-          if [[ "${{ env.PREVIOUS_TAG }}" ]]; then
-            COMMITS=$(git log --oneline --no-decorate ${{ env.PREVIOUS_TAG }}..${{ env.CURRENT_TAG }} | tr '"' "'" | while read LINE; do echo -n ${LINE}\\n; done)
-          else
-            COMMITS=$(git log --oneline --no-decorate ${{ env.CURRENT_TAG }} | tr '"' "'" | while read LINE; do echo -n ${LINE}\\n; done)
-          fi
-
+          COMMITS=$(git log --oneline --no-decorate $([[ "${{ env.PREVIOUS_TAG }}" ]] && echo "${{ env.PREVIOUS_TAG }}..") ${{ env.CURRENT_TAG }} | tr '"' "'" | while read LINE; do echo -n ${LINE}\\n; done)
           echo "commits=${COMMITS}" >> $GITHUB_OUTPUT
 
       # Export commits output through javascript to properly process multiline string
@@ -142,3 +137,18 @@ jobs:
             #### Changelog:
             ${{ format('[`{0}..{1}`]({2}/{3}/compare/{0}..{1})', env.PREVIOUS_TAG, env.CURRENT_TAG, github.server_url, github.repository) }}
             ${{ steps.changelog.outputs.changelog == 'true' && format('[{0}]({1}/{2}/blob/{3}/{0})', env.CHANGELOG_FILE, github.server_url, github.repository, github.ref_name) || '' }}
+
+      - name: Remove draft releases for current tag
+        env:
+          RELEASES_URL: ${{ format('https://api.github.com/repos/{0}/releases', github.repository) }}
+          CURRENT_TAG: ${{ steps.tag.outputs.current_tag }}
+        run: |
+          DRAFT_ID=$(curl -Ss -L -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${{ github.token }}" ${{ env.RELEASES_URL }} | jq '.[] | select(.tag_name == "${{ env.CURRENT_TAG }}" and .draft == true) | .id')
+          if [[ ! -z "${DRAFT_ID}" ]]; then
+            for ID in ${DRAFT_ID}; do
+              echo "Delete draft release ID ${ID}"
+              curl -Ss -L -X DELETE -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${{ github.token }}" ${{ env.RELEASES_URL }}/${ID}
+            done
+          else
+            echo "No draft releases found"
+          fi
