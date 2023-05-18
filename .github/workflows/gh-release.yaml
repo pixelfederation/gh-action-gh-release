@@ -4,6 +4,7 @@ on:
   push:
     tags:
       - '*'
+
   workflow_dispatch:
     inputs:
       # If enabled, respects commits between semver tag build num iterations instead of previous commited tag (eg: X.X.X-y_2 -> X.X.X-y_3)
@@ -20,12 +21,16 @@ on:
         type: string
         default: 'CHANGELOG.md'
       runs_on:
-        description: 'Set runner, defualt ubuntu-latest'
+        description: 'Set runner, default ubuntu-latest'
         type: string
         default: 'ubuntu-latest'
 
   workflow_call:
     inputs:
+      release_tag:
+        description: 'Tag which release is created from, if empty, use last commited tag'
+        type: string
+        default: ''
       # If enabled, respects commits between semver tag build num iterations instead of previous commited tag (eg: X.X.X-y_2 -> X.X.X-y_3)
       tag_num:
         description: 'Take into account build number'
@@ -40,7 +45,7 @@ on:
         type: string
         default: 'CHANGELOG.md'
       runs_on:
-        description: 'Set runner, defualt ubuntu-latest'
+        description: 'Set runner, default ubuntu-latest'
         type: string
         default: 'ubuntu-latest'
 
@@ -55,13 +60,17 @@ jobs:
 
       - name: Get tags
         id: tag
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag || '' }}
         run: |
           git fetch --tags
 
-          if [[ ${GITHUB_REF_TYPE} == tag ]]; then
+          if [[ "${GITHUB_REF_TYPE}" == tag ]]; then
             CURRENT_TAG=${GITHUB_REF##*/}
+          elif [[ "${{ env.RELEASE_TAG }}" != '' ]]; then
+            CURRENT_TAG=${RELEASE_TAG}
           else
-            CURRENT_TAG=$(git describe --abbrev=0 --tags 2>/dev/null || true )
+            CURRENT_TAG=$(git describe --abbrev=0 --tags 2>/dev/null || true)
           fi
 
           PREVIOUS_TAG=$(git describe --abbrev=0 --tags $(git rev-list --tags --skip=1 --max-count=1) 2>/dev/null || true)

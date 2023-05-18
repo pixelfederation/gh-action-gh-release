@@ -1,8 +1,9 @@
 # Changelog
 
 # [0.1.1]
-- Remove unused action
-- set current tag from github.ref if exists
+- remove unused action
+- add `release_tag` input for external workflow call
+- set local current tag from github.ref if exists
 
 ## [0.1.0]
 - initial release
