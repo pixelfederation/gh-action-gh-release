@@ -57,7 +57,13 @@ jobs:
         id: tag
         run: |
           git fetch --tags
-          CURRENT_TAG=$(git describe --abbrev=0 --tags 2>/dev/null || true )
+
+          if [[ ${GITHUB_REF_TYPE} == tag ]]; then
+            CURRENT_TAG=${GITHUB_REF##*/}
+          else
+            CURRENT_TAG=$(git describe --abbrev=0 --tags 2>/dev/null || true )
+          fi
+
           PREVIOUS_TAG=$(git describe --abbrev=0 --tags $(git rev-list --tags --skip=1 --max-count=1) 2>/dev/null || true)
 
           echo "previous tag: ${PREVIOUS_TAG}"
@@ -68,7 +74,7 @@ jobs:
           # Exit if there's any tag
           if [[ ! -n "${CURRENT_TAG}" ]]; then
             # Create annotation
-            echo "::error::Can't get any tag, create one, then release can be published."
+            echo "::error::Can't get any tag."
             exit 1
           fi
 
