@@ -1,5 +1,8 @@
 # Changelog
 
+# [0.1.2]
+- Force fetch tags
+
 # [0.1.1]
 - remove unused action
 - add `release_tag` input for external workflow call
