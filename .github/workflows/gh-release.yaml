@@ -92,7 +92,7 @@ jobs:
       - name: Parse semver tag
         if: ${{ inputs.tag_num || false }}
         id: tag_semver
-        uses: pixelfederation/gh-action-semver-parser@v0.2.0
+        uses: pixelfederation/gh-action-semver-parser@v0.2.1
         with:
           tag: ${{ steps.tag.outputs.current_tag }}
 
