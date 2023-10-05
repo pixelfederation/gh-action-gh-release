@@ -123,7 +123,7 @@ jobs:
           PREVIOUS_TAG: ${{ (inputs.tag_num && steps.tag_semver_num.outputs.previous_tag != '') && steps.tag_semver_num.outputs.previous_tag || steps.tag.outputs.previous_tag }}
           CURRENT_TAG: ${{ steps.tag.outputs.current_tag }}
         run: |
-          COMMITS=$(git log --oneline --no-decorate $([[ "${{ env.PREVIOUS_TAG }}" ]] && echo "${{ env.PREVIOUS_TAG }}..") ${{ env.CURRENT_TAG }} | tr '"' "'" | while read LINE; do echo -n ${LINE}\\n; done)
+          COMMITS=$(git log --first-parent --oneline --no-decorate $([[ "${{ env.PREVIOUS_TAG }}" ]] && echo "${{ env.PREVIOUS_TAG }}..") ${{ env.CURRENT_TAG }} | tr '"' "'" | while read LINE; do echo -n ${LINE}\\n; done)
           echo "commits=${COMMITS}" >> $GITHUB_OUTPUT
 
       # Export commits output through javascript to properly process multiline string
