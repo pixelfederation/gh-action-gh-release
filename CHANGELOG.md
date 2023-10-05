@@ -1,5 +1,9 @@
 # Changelog
 
+# [0.1.3]
+- fetch tags within checkout action
+- add git log first-parent option
+
 # [0.1.2]
 - Force fetch tags
 
