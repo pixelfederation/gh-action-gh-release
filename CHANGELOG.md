@@ -1,5 +1,8 @@
 # Changelog
 
+# [0.2.0]
+- Bump dependencies
+
 # [0.1.5]
 - fix fetch source repository on triggered action
 
