@@ -1,5 +1,8 @@
 # Changelog
 
+# [0.2.1]
+- Bump gh-action-semver-parser
+
 # [0.2.0]
 - Bump dependencies
 
