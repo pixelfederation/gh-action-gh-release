@@ -136,7 +136,7 @@ jobs:
             core.setOutput("commits", `${{ steps.commits.outputs.commits }}`);
 
       - name: Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         env:
           CHANGELOG_FILE: ${{ inputs.changelog_file || 'CHANGELOG.md' }}
           PREVIOUS_TAG: ${{ (inputs.tag_num && steps.tag_semver_num.outputs.previous_tag != '') && steps.tag_semver_num.outputs.previous_tag || steps.tag.outputs.previous_tag }}
